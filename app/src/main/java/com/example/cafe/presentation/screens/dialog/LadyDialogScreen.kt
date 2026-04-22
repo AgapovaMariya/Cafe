@@ -15,6 +15,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Text
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.text.font.FontWeight
 import com.example.cafe.R
 
@@ -44,7 +45,7 @@ fun LadyDialogScreen(
     }
 
     // Текущий индекс отображаемого текста
-    var currentIndex by remember { mutableStateOf(0) }
+    var currentIndex by rememberSaveable { mutableStateOf(0) }
 
     // Координаты для текста
     val portraitTextX = 50.dp
