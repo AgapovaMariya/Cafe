@@ -38,7 +38,7 @@ fun CafeScreen(
     // Погода
     val weatherRepository = remember { WeatherRepository() }
     val coroutineScope = rememberCoroutineScope()
-    var weatherText by remember { mutableStateOf("Загрузка погоды...") }
+    var weatherText by remember { mutableStateOf("...") }
     var temperature by remember { mutableStateOf<Double?>(null) }
 
     // Загружаем погоду при первом появлении экрана
@@ -55,10 +55,10 @@ fun CafeScreen(
     }
 
     // Координаты для виджета погоды
-    val portraitWeatherX = 200.dp
-    val portraitWeatherY = 50.dp
-    val landscapeWeatherX = 400.dp
-    val landscapeWeatherY = 30.dp
+    val portraitWeatherX = 132.dp
+    val portraitWeatherY = 240.dp
+    val landscapeWeatherX = 385.dp
+    val landscapeWeatherY = 90.dp
 
     Box(
         modifier = Modifier
@@ -80,8 +80,6 @@ fun CafeScreen(
                     x = if (isLandscape) landscapeWeatherX else portraitWeatherX,
                     y = if (isLandscape) landscapeWeatherY else portraitWeatherY
                 )
-                .clip(RoundedCornerShape(8.dp))
-                .background(Color.Black.copy(alpha = 0.7f))
                 .padding(horizontal = 12.dp, vertical = 6.dp)
         ) {
             Text(

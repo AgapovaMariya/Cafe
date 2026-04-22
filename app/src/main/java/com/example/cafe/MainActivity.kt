@@ -8,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.saveable.rememberSaveable
 import com.example.cafe.presentation.screens.cafe.CafeScreen
 import com.example.cafe.presentation.screens.start.StartScreen
 import com.example.cafe.ui.theme.CafeTheme
@@ -30,7 +31,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun AppNavigation() {
-    var currentScreen by remember { mutableStateOf("start") }
+    // rememberSaveable сохраняет значение при повороте экрана
+    var currentScreen by rememberSaveable { mutableStateOf("start") }
 
     when (currentScreen) {
         "start" -> StartScreen(
