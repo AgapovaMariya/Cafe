@@ -1,24 +1,23 @@
 package com.example.cafe.presentation.screens.start
 
 import android.content.res.Configuration
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.toSize
 import com.example.cafe.R
 
 @Composable
@@ -59,70 +58,79 @@ fun StartScreen(
             contentScale = ContentScale.Fit
         )
 
-        // Кнопка "Начать" - оригинальный размер
+        // Кнопка "Начать" с анимацией
         val startButtonPainter = painterResource(id = R.drawable.nach_button)
         val startButtonIntrinsicSize = startButtonPainter.intrinsicSize
 
-        Box(
-            modifier = Modifier
-                .offset(
-                    x = if (isLandscape) landscapeStartX else portraitStartX,
-                    y = if (isLandscape) landscapeStartY else portraitStartY
-                )
-                .size(
-                    width = startButtonIntrinsicSize.width.dp,
-                    height = startButtonIntrinsicSize.height.dp
-                )
-                .pointerInput(Unit) {
-                    awaitPointerEventScope {
-                        while (true) {
-                            val event = awaitPointerEvent()
-                            if (event.type == PointerEventType.Press) {
-                                onStartClick()
-                            }
-                        }
-                    }
-                }
-        ) {
-            Image(
-                painter = startButtonPainter,
-                contentDescription = "Start button",
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.FillBounds  // Растягиваем ровно под размер Box
-            )
-        }
+        AnimatedButton(
+            onClick = onStartClick,
+            xOffset = if (isLandscape) landscapeStartX else portraitStartX,
+            yOffset = if (isLandscape) landscapeStartY else portraitStartY,
+            width = startButtonIntrinsicSize.width.dp,
+            height = startButtonIntrinsicSize.height.dp,
+            painter = startButtonPainter,
+            contentDescription = "Start button"
+        )
 
-        // Кнопка "Выход" - оригинальный размер
+        // Кнопка "Выход" с анимацией
         val exitButtonPainter = painterResource(id = R.drawable.out_button)
         val exitButtonIntrinsicSize = exitButtonPainter.intrinsicSize
 
-        Box(
-            modifier = Modifier
-                .offset(
-                    x = if (isLandscape) landscapeExitX else portraitExitX,
-                    y = if (isLandscape) landscapeExitY else portraitExitY
+        AnimatedButton(
+            onClick = onExitClick,
+            xOffset = if (isLandscape) landscapeExitX else portraitExitX,
+            yOffset = if (isLandscape) landscapeExitY else portraitExitY,
+            width = exitButtonIntrinsicSize.width.dp,
+            height = exitButtonIntrinsicSize.height.dp,
+            painter = exitButtonPainter,
+            contentDescription = "Exit button"
+        )
+    }
+}
+
+@Composable
+fun AnimatedButton(
+    onClick: () -> Unit,
+    xOffset: androidx.compose.ui.unit.Dp,
+    yOffset: androidx.compose.ui.unit.Dp,
+    width: androidx.compose.ui.unit.Dp,
+    height: androidx.compose.ui.unit.Dp,
+    painter: androidx.compose.ui.graphics.painter.Painter,
+    contentDescription: String?
+) {
+    var isPressed by remember { mutableStateOf(false) }
+
+    // Анимация масштаба при нажатии
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.92f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "button_scale"
+    )
+
+    Box(
+        modifier = Modifier
+            .offset(x = xOffset, y = yOffset)
+            .size(width = width, height = height)
+            .scale(scale)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onPress = {
+                        isPressed = true
+                        tryAwaitRelease()  // Ждём, пока палец оторвётся
+                        isPressed = false
+                    },
+                    onTap = { onClick() }
                 )
-                .size(
-                    width = exitButtonIntrinsicSize.width.dp,
-                    height = exitButtonIntrinsicSize.height.dp
-                )
-                .pointerInput(Unit) {
-                    awaitPointerEventScope {
-                        while (true) {
-                            val event = awaitPointerEvent()
-                            if (event.type == PointerEventType.Press) {
-                                onExitClick()
-                            }
-                        }
-                    }
-                }
-        ) {
-            Image(
-                painter = exitButtonPainter,
-                contentDescription = "Exit button",
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.FillBounds
-            )
-        }
+            }
+    ) {
+        Image(
+            painter = painter,
+            contentDescription = contentDescription,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.FillBounds
+        )
     }
 }
