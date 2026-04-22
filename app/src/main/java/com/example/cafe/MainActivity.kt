@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.example.cafe.presentation.screens.cafe.CafeScreen
+import com.example.cafe.presentation.screens.dialog.LadyDialogScreen
 import com.example.cafe.presentation.screens.start.StartScreen
 import com.example.cafe.ui.theme.CafeTheme
 
@@ -31,7 +32,6 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun AppNavigation() {
-    // rememberSaveable сохраняет значение при повороте экрана
     var currentScreen by rememberSaveable { mutableStateOf("start") }
 
     when (currentScreen) {
@@ -40,7 +40,12 @@ fun AppNavigation() {
             onExitClick = { android.os.Process.killProcess(android.os.Process.myPid()) }
         )
         "cafe" -> CafeScreen(
-            onBackToStart = { currentScreen = "start" }
+            onBackToStart = { currentScreen = "start" },
+            onNavigateToLadyDialog = { currentScreen = "lady_dialog" }
+        )
+        "lady_dialog" -> LadyDialogScreen(
+            onBackToCafe = { currentScreen = "cafe" },
+            onNextScreen = { currentScreen = "machine" }  // позже
         )
     }
 }
