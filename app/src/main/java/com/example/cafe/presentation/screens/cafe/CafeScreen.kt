@@ -60,11 +60,11 @@ fun CafeScreen(
     val landscapeWeatherX = 385.dp
     val landscapeWeatherY = 90.dp
 
-    // Координаты для персонажа lady_small (настройте под свою графику)
-    val portraitLadyX = 150.dp
-    val portraitLadyY = 400.dp
-    val landscapeLadyX = 300.dp
-    val landscapeLadyY = 200.dp
+    // Координаты для персонажа lady_small
+    val portraitLadyX = 140.dp
+    val portraitLadyY = 500.dp
+    val landscapeLadyX = 375.dp
+    val landscapeLadyY = 235.dp
 
     Box(
         modifier = Modifier

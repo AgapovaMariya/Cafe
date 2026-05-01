@@ -16,8 +16,8 @@ object DialogResetHelper {
         val savedVersion = prefs.getInt(KEY_APP_VERSION, 0)
 
         if (currentVersion != savedVersion) {
-            // Версия изменилась - сбрасываем диалог (добавим метод в DialogRepository)
-            // Пока просто сбросим конкретный диалог
+            // Версия изменилась - сбрасываем диалог
+            // Сбросим конкретный диалог
             repository.resetProgress("lady_dialog")
             prefs.edit().putInt(KEY_APP_VERSION, currentVersion).apply()
         }
