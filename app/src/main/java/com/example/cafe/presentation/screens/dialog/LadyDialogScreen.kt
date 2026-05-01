@@ -7,6 +7,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -17,52 +18,46 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cafe.R
 import com.example.cafe.data.repository.DialogRepository
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.example.cafe.domain.usecases.LoadDialogUseCase
+import com.example.cafe.domain.usecases.SaveDialogProgressUseCase
 
 @Composable
 fun LadyDialogScreen(
     onBackToCafe: () -> Unit = {},
-    onNextScreen: () -> Unit = {}
+    onNextScreen: () -> Unit = {},
+    viewModel: DialogViewModel = viewModel(
+        factory = DialogViewModelFactory(
+            LoadDialogUseCase(DialogRepository(LocalContext.current)),
+            SaveDialogProgressUseCase(DialogRepository(LocalContext.current))
+        )
+    )
 ) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     val context = LocalContext.current
 
     val backgroundRes = if (isLandscape) R.drawable.lady_l else R.drawable.lady_p
+    val dialogLines by viewModel.dialogLines.observeAsState(emptyList())
+    val currentIndex by viewModel.currentIndex.observeAsState(0)
+    val isLoading by viewModel.isLoading.observeAsState(true)
+    val isComplete by viewModel.isComplete.observeAsState(false)
 
-    var dialogLines by remember { mutableStateOf<List<String>>(emptyList()) }
-    var currentIndex by remember { mutableStateOf(0) }
-    var isLoaded by remember { mutableStateOf(false) }
-
-    // Загружаем диалог из JSON и сбрасываем прогресс
     LaunchedEffect(Unit) {
-        withContext(Dispatchers.IO) {
-            val repository = DialogRepository(context)
+        viewModel.loadDialog("lady_dialog")
+    }
 
-            // 1. Загружаем диалог из JSON
-            val lines = repository.loadDialogFromAssets("lady_dialog")
-
-            // 2. Сбрасываем прогресс при запуске
-            repository.resetProgress("lady_dialog")
-
-            withContext(Dispatchers.Main) {
-                dialogLines = lines
-                currentIndex = 0
-                isLoaded = true
-            }
+    LaunchedEffect(currentIndex) {
+        if (!isLoading && dialogLines.isNotEmpty()) {
+            viewModel.saveProgress("lady_dialog")
         }
     }
 
-    // Сохраняем прогресс в процессе диалога
-    LaunchedEffect(currentIndex) {
-        if (isLoaded && dialogLines.isNotEmpty()) {
-            withContext(Dispatchers.IO) {
-                val repository = DialogRepository(context)
-                repository.saveProgress("lady_dialog", currentIndex)
-            }
+    LaunchedEffect(isComplete) {
+        if (isComplete) {
+            onNextScreen()
         }
     }
 
@@ -74,10 +69,8 @@ fun LadyDialogScreen(
     val landscapeTextWidth = 330.dp
 
     val onScreenTap = {
-        if (currentIndex < dialogLines.size - 1) {
-            currentIndex++
-        } else {
-            onNextScreen()
+        if (!isLoading) {
+            viewModel.nextLine()
         }
     }
 
@@ -96,7 +89,7 @@ fun LadyDialogScreen(
             contentScale = ContentScale.Fit
         )
 
-        if (isLoaded && dialogLines.isNotEmpty()) {
+        if (!isLoading && dialogLines.isNotEmpty()) {
             Box(
                 modifier = Modifier
                     .offset(
