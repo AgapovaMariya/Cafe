@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.example.cafe.presentation.screens.cafe.CafeScreen
 import com.example.cafe.presentation.screens.dialog.LadyDialogScreen
+import com.example.cafe.presentation.screens.machine.MachineScreenWithDrawer
 import com.example.cafe.presentation.screens.start.StartScreen
 import com.example.cafe.ui.theme.CafeTheme
 
@@ -34,18 +35,39 @@ class MainActivity : ComponentActivity() {
 fun AppNavigation() {
     var currentScreen by rememberSaveable { mutableStateOf("start") }
 
+    // Данные для MachineScreen (что заказал персонаж)
+    var targetBase by rememberSaveable { mutableStateOf("latte") }
+    var targetBlood by rememberSaveable { mutableStateOf("A+") }
+
     when (currentScreen) {
         "start" -> StartScreen(
             onStartClick = { currentScreen = "cafe" },
             onExitClick = { android.os.Process.killProcess(android.os.Process.myPid()) }
         )
+
         "cafe" -> CafeScreen(
             onBackToStart = { currentScreen = "start" },
             onNavigateToLadyDialog = { currentScreen = "lady_dialog" }
         )
+
         "lady_dialog" -> LadyDialogScreen(
             onBackToCafe = { currentScreen = "cafe" },
-            onNextScreen = { currentScreen = "machine" }  // позже
+            onNextScreen = {
+
+                targetBase = "latte"
+                targetBlood = "A+"
+                currentScreen = "machine"
+            }
+        )
+
+        "machine" -> MachineScreenWithDrawer(
+            targetBase = targetBase,
+            targetBlood = targetBlood,
+            onBackToCafe = { currentScreen = "cafe" },
+            onComplete = { isCorrect ->
+                // Переход на результат (пока вернёмся в кафе)
+                currentScreen = "cafe"
+            }
         )
     }
 }
