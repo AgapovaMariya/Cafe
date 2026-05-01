@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.example.cafe.presentation.screens.cafe.CafeScreen
 import com.example.cafe.presentation.screens.dialog.LadyDialogScreen
+import com.example.cafe.presentation.screens.dialog.ResultDialogScreen
 import com.example.cafe.presentation.screens.machine.MachineScreenWithDrawer
 import com.example.cafe.presentation.screens.start.StartScreen
 import com.example.cafe.ui.theme.CafeTheme
@@ -36,8 +37,9 @@ fun AppNavigation() {
     var currentScreen by rememberSaveable { mutableStateOf("start") }
 
     // Данные для MachineScreen (что заказал персонаж)
-    var targetBase by rememberSaveable { mutableStateOf("latte") }
-    var targetBlood by rememberSaveable { mutableStateOf("A+") }
+    var targetBase by rememberSaveable { mutableStateOf("cappuccino") }
+    var targetBlood by rememberSaveable { mutableStateOf("B+") }
+    var gameResult by rememberSaveable { mutableStateOf(false) }
 
     when (currentScreen) {
         "start" -> StartScreen(
@@ -53,9 +55,9 @@ fun AppNavigation() {
         "lady_dialog" -> LadyDialogScreen(
             onBackToCafe = { currentScreen = "cafe" },
             onNextScreen = {
-
-                targetBase = "latte"
-                targetBlood = "A+"
+                // Заказ: Закатный эликсир = Капучино + B+
+                targetBase = "cappuccino"
+                targetBlood = "B+"
                 currentScreen = "machine"
             }
         )
@@ -65,9 +67,15 @@ fun AppNavigation() {
             targetBlood = targetBlood,
             onBackToCafe = { currentScreen = "cafe" },
             onComplete = { isCorrect ->
-                // Переход на результат (пока вернёмся в кафе)
-                currentScreen = "cafe"
+                gameResult = isCorrect
+                currentScreen = "result"
             }
+        )
+
+        "result" -> ResultDialogScreen(
+            isSuccess = gameResult,
+            onBackToCafe = { currentScreen = "cafe" },
+            onRestart = { currentScreen = "start" }
         )
     }
 }
