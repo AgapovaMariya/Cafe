@@ -1,5 +1,7 @@
 package com.example.cafe.presentation.screens.dialog
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import android.content.res.Configuration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -11,13 +13,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.Text
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.text.font.FontWeight
 import com.example.cafe.R
+import com.example.cafe.data.AppDatabase
+import com.example.cafe.data.DialogProgress
+import kotlinx.coroutines.launch
 
 @Composable
 fun LadyDialogScreen(
@@ -26,42 +31,56 @@ fun LadyDialogScreen(
 ) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
-    val backgroundRes = if (isLandscape) {
-        R.drawable.lady_l
-    } else {
-        R.drawable.lady_p
+    val backgroundRes = if (isLandscape) R.drawable.lady_l else R.drawable.lady_p
+
+    // Текст диалога (простой список)
+    val dialogLines = listOf(
+        "Привет, стажёр!",
+        "Я леди-вампир.",
+        "Сегодня отличная погода для кровавого кофе!",
+        "Сделай мне Латте с кровью A+",
+        "Справишься?"
+    )
+
+    // Загружаем сохранённый индекс из Room
+    var currentIndex by remember { mutableStateOf(0) }
+    var isLoaded by remember { mutableStateOf(false) }
+
+    // Загружаем из Room
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            val db = AppDatabase.getInstance(context)
+            val saved = db.dialogDao().get("lady_dialog")
+            currentIndex = saved?.currentLine ?: 0
+            isLoaded = true
+        }
     }
 
-    // Список диалогов (построчно)
-    val dialogLines = remember {
-        listOf(
-            "Привет, стажёр!",
-            "Я леди-вампир.",
-            "Сегодня отличная погода для кровавого кофе!",
-            "Сделай мне Латте с кровью A+",
-            "Справишься?"
-        )
+// Сохраняем в Room
+    LaunchedEffect(currentIndex) {
+        if (isLoaded) {
+            withContext(Dispatchers.IO) {
+                val db = AppDatabase.getInstance(context)
+                db.dialogDao().save(DialogProgress("lady_dialog", currentIndex))
+            }
+        }
     }
 
-    // Текущий индекс отображаемого текста
-    var currentIndex by rememberSaveable { mutableStateOf(0) }
-
-    // Координаты для текста
     val portraitTextX = 50.dp
     val portraitTextY = 620.dp
-    val portraitTextWidth = 330.dp  // ширина текстового поля
-
+    val portraitTextWidth = 330.dp
     val landscapeTextX = 150.dp
     val landscapeTextY = 275.dp
-    val landscapeTextWidth = 330.dp  // ширина текстового поля
+    val landscapeTextWidth = 330.dp
 
-    // Обработка нажатия на экран
     val onScreenTap = {
         if (currentIndex < dialogLines.size - 1) {
-            currentIndex++  // следующий текст
+            currentIndex++
         } else {
-            onNextScreen()  // диалог закончен, переходим к MachineScreen
+            onNextScreen()
         }
     }
 
@@ -70,12 +89,9 @@ fun LadyDialogScreen(
             .fillMaxSize()
             .background(Color.Black)
             .pointerInput(Unit) {
-                detectTapGestures(
-                    onTap = { onScreenTap() }
-                )
+                detectTapGestures(onTap = { onScreenTap() })
             }
     ) {
-        // Фон диалога
         Image(
             painter = painterResource(id = backgroundRes),
             contentDescription = "Lady dialog background",
@@ -83,24 +99,25 @@ fun LadyDialogScreen(
             contentScale = ContentScale.Fit
         )
 
-        // Текст диалога (чёрный, в указанной области)
-        Box(
-            modifier = Modifier
-                .offset(
-                    x = if (isLandscape) landscapeTextX else portraitTextX,
-                    y = if (isLandscape) landscapeTextY else portraitTextY
+        if (isLoaded) {
+            Box(
+                modifier = Modifier
+                    .offset(
+                        x = if (isLandscape) landscapeTextX else portraitTextX,
+                        y = if (isLandscape) landscapeTextY else portraitTextY
+                    )
+                    .width(if (isLandscape) landscapeTextWidth else portraitTextWidth)
+                    .wrapContentHeight()
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = dialogLines[currentIndex],
+                    color = Color.Black,
+                    fontSize = if (isLandscape) 24.sp else 24.sp,
+                    fontWeight = FontWeight.Normal,
+                    lineHeight = 20.sp
                 )
-                .width(if (isLandscape) landscapeTextWidth else portraitTextWidth)
-                .wrapContentHeight()
-                .padding(horizontal = 8.dp, vertical = 4.dp)
-        ) {
-            Text(
-                text = dialogLines[currentIndex],
-                color = Color.Black,
-                fontSize = if (isLandscape) 24.sp else 24.sp,
-                fontWeight = FontWeight.Normal,
-                lineHeight = 20.sp
-            )
+            }
         }
     }
 }
