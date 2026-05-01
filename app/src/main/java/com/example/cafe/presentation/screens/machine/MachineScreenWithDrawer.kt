@@ -17,6 +17,15 @@ fun MachineScreenWithDrawer(
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    var isFirstRender by remember { mutableStateOf(true) }
+
+    // Только при первом рендере закрываем без анимации
+    LaunchedEffect(Unit) {
+        if (isFirstRender) {
+            drawerState.close()
+            isFirstRender = false
+        }
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
