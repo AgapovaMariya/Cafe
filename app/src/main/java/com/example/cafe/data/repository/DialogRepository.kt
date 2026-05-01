@@ -11,7 +11,8 @@ class DialogRepository(private val context: Context) {
 
     suspend fun loadDialogFromAssets(dialogId: String): List<String> {
         return withContext(Dispatchers.IO) {
-            val jsonString = context.assets.open("dialogues.json").bufferedReader().use { it.readText() }
+            val jsonString = context.assets.open("dialogues.json")
+                .bufferedReader().use { it.readText() }
             val jsonObject = JSONObject(jsonString)
             val jsonArray = jsonObject.getJSONArray(dialogId)
 
@@ -23,19 +24,6 @@ class DialogRepository(private val context: Context) {
         }
     }
 
-    suspend fun saveDialogToRoom(dialogId: String, lines: List<String>) {
-        withContext(Dispatchers.IO) {
-            // Сохраняем только прогресс (текущий индекс = 0)
-            val progress = DialogProgress(dialogId, 0)
-            AppDatabase.getInstance(context).dialogDao().save(progress)
-        }
-    }
-
-    suspend fun getDialogFromRoom(dialogId: String): List<String> {
-        // Диалоги не храним в Room, только прогресс. Возвращаем пустой список
-        return emptyList()
-    }
-
     suspend fun getProgress(dialogId: String): Int {
         return withContext(Dispatchers.IO) {
             val progress = AppDatabase.getInstance(context).dialogDao().get(dialogId)
@@ -43,11 +31,17 @@ class DialogRepository(private val context: Context) {
         }
     }
 
-    suspend fun saveProgress(dialogId: String, currentIndex: Int, isCompleted: Boolean) {
+    suspend fun saveProgress(dialogId: String, currentIndex: Int) {
         withContext(Dispatchers.IO) {
             AppDatabase.getInstance(context).dialogDao().save(
                 DialogProgress(dialogId, currentIndex)
             )
+        }
+    }
+
+    suspend fun resetProgress(dialogId: String) {
+        withContext(Dispatchers.IO) {
+            AppDatabase.getInstance(context).dialogDao().deleteProgress(dialogId)
         }
     }
 }

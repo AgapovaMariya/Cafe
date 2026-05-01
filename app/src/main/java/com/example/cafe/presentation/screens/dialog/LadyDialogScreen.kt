@@ -1,12 +1,11 @@
 package com.example.cafe.presentation.screens.dialog
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import android.content.res.Configuration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -15,14 +14,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material3.Text
-import androidx.compose.ui.text.font.FontWeight
 import com.example.cafe.R
-import com.example.cafe.data.AppDatabase
-import com.example.cafe.data.DialogProgress
-import kotlinx.coroutines.launch
+import com.example.cafe.data.repository.DialogRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun LadyDialogScreen(
@@ -32,39 +30,38 @@ fun LadyDialogScreen(
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
 
     val backgroundRes = if (isLandscape) R.drawable.lady_l else R.drawable.lady_p
 
-    // Текст диалога (простой список)
-    val dialogLines = listOf(
-        "Привет, стажёр!",
-        "Я леди-вампир.",
-        "Сегодня отличная погода для кровавого кофе!",
-        "Сделай мне Латте с кровью A+",
-        "Справишься?"
-    )
-
-    // Загружаем сохранённый индекс из Room
+    var dialogLines by remember { mutableStateOf<List<String>>(emptyList()) }
     var currentIndex by remember { mutableStateOf(0) }
     var isLoaded by remember { mutableStateOf(false) }
 
-    // Загружаем из Room
+    // Загружаем диалог из JSON и сбрасываем прогресс
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
-            val db = AppDatabase.getInstance(context)
-            val saved = db.dialogDao().get("lady_dialog")
-            currentIndex = saved?.currentLine ?: 0
-            isLoaded = true
+            val repository = DialogRepository(context)
+
+            // 1. Загружаем диалог из JSON
+            val lines = repository.loadDialogFromAssets("lady_dialog")
+
+            // 2. Сбрасываем прогресс при запуске
+            repository.resetProgress("lady_dialog")
+
+            withContext(Dispatchers.Main) {
+                dialogLines = lines
+                currentIndex = 0
+                isLoaded = true
+            }
         }
     }
 
-// Сохраняем в Room
+    // Сохраняем прогресс в процессе диалога
     LaunchedEffect(currentIndex) {
-        if (isLoaded) {
+        if (isLoaded && dialogLines.isNotEmpty()) {
             withContext(Dispatchers.IO) {
-                val db = AppDatabase.getInstance(context)
-                db.dialogDao().save(DialogProgress("lady_dialog", currentIndex))
+                val repository = DialogRepository(context)
+                repository.saveProgress("lady_dialog", currentIndex)
             }
         }
     }
@@ -99,7 +96,7 @@ fun LadyDialogScreen(
             contentScale = ContentScale.Fit
         )
 
-        if (isLoaded) {
+        if (isLoaded && dialogLines.isNotEmpty()) {
             Box(
                 modifier = Modifier
                     .offset(

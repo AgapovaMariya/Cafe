@@ -12,4 +12,7 @@ interface DialogDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun save(progress: DialogProgress)
+
+    @Query("DELETE FROM dialog_progress WHERE dialogId = :dialogId")
+    fun deleteProgress(dialogId: String)
 }
