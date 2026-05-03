@@ -29,7 +29,8 @@ fun ResultDialogScreen(
     orderedDrinkName: String = "Закатный эликсир",
     onBackToCafe: () -> Unit = {},
     onRestart: () -> Unit = {},
-    isFlowResult: Boolean = false
+    isFlowResult: Boolean = false,
+    isFinal: Boolean = false
 ) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -45,25 +46,22 @@ fun ResultDialogScreen(
     var currentIndex by rememberSaveable { mutableStateOf(0) }
     var isLoaded by remember { mutableStateOf(false) }
 
-    // Выбираем ID диалога в зависимости от результата и персонажа
     val dialogId = when {
+        isFinal && isSuccess -> "result_success_end"
+        isFinal && !isSuccess -> "result_fail_end"
         isFlowResult && isSuccess -> "flow_result_success"
         isFlowResult && !isSuccess -> "flow_result_fail"
         !isFlowResult && isSuccess -> "result_success"
         else -> "result_fail"
     }
 
-    // Загружаем диалог из JSON
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             val repository = DialogRepository(context)
             val lines = repository.loadDialogFromAssets(dialogId)
-
-            // Заменяем плейсхолдер на название напитка
             val processedLines = lines.map { line ->
                 line.replace("{drinkName}", orderedDrinkName)
             }
-
             withContext(Dispatchers.Main) {
                 dialogLines = processedLines
                 isLoaded = true
@@ -82,7 +80,11 @@ fun ResultDialogScreen(
         if (currentIndex < dialogLines.size - 1) {
             currentIndex++
         } else {
-            if (isSuccess) onBackToCafe() else onRestart()
+            if (isFinal) {
+                onRestart()
+            } else {
+                if (isSuccess) onBackToCafe() else onRestart()
+            }
         }
     }
 
@@ -96,7 +98,7 @@ fun ResultDialogScreen(
     ) {
         Image(
             painter = painterResource(id = backgroundRes),
-            contentDescription = if (isFlowResult) "Flow result background" else "Lady result background",
+            contentDescription = "Result dialog background",
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Fit
         )

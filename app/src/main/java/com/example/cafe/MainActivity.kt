@@ -42,13 +42,17 @@ fun AppNavigation() {
     var targetDrinkName by rememberSaveable { mutableStateOf("Закатный эликсир") }
     var gameResult by rememberSaveable { mutableStateOf(false) }
     var shouldResetDialog by rememberSaveable { mutableStateOf(false) }
-    var isLadyVisible by rememberSaveable { mutableStateOf(true) }  // ← кто в кафе
+    var isLadyVisible by rememberSaveable { mutableStateOf(true) }
+
+    // Флоу: 1=первый заказ, 2=второй заказ
+    var flowOrderCount by rememberSaveable { mutableStateOf(1) }
 
     when (currentScreen) {
         "start" -> StartScreen(
             onStartClick = {
                 shouldResetDialog = true
-                isLadyVisible = true  // ← начинаем с леди
+                isLadyVisible = true
+                flowOrderCount = 1
                 currentScreen = "cafe"
             },
             onExitClick = { android.os.Process.killProcess(android.os.Process.myPid()) }
@@ -57,7 +61,10 @@ fun AppNavigation() {
         "cafe" -> CafeScreen(
             onBackToStart = { currentScreen = "start" },
             onNavigateToLadyDialog = { currentScreen = "lady_dialog" },
-            onNavigateToFlowDialog = { currentScreen = "flow_dialog" },
+            onNavigateToFlowDialog = {
+                // НЕ сбрасываем flowOrderCount!
+                currentScreen = "flow_dialog"
+            },
             isLadyVisible = isLadyVisible
         )
 
@@ -73,6 +80,7 @@ fun AppNavigation() {
         )
 
         "flow_dialog" -> FlowDialogScreen(
+            orderNumber = flowOrderCount,
             onBackToCafe = { currentScreen = "cafe" },
             onNextScreen = { base, blood, drinkName ->
                 targetBase = base
@@ -97,35 +105,92 @@ fun AppNavigation() {
             targetBlood = targetBlood,
             onBackToCafe = { currentScreen = "cafe" },
             onComplete = { isCorrect ->
-                gameResult = isCorrect
-                currentScreen = "result_flow"
+                when (flowOrderCount) {
+                    1 -> {
+                        if (isCorrect) {
+                            gameResult = true
+                            currentScreen = "flow_result_first"  // спасибо, давай ещё
+                        } else {
+                            gameResult = false
+                            currentScreen = "flow_result_fail"   // диалог провала Флоу
+                        }
+                    }
+                    2 -> {
+                        // Второй заказ – сразу финал без промежуточных диалогов
+                        gameResult = isCorrect
+                        currentScreen = "final_lady_result"
+                    }
+                }
             }
         )
 
         "result" -> ResultDialogScreen(
             isSuccess = gameResult,
+            orderedDrinkName = targetDrinkName,
             onBackToCafe = {
-                if (gameResult) {
-                    isLadyVisible = false  // ← убираем леди, показываем флоу
-                }
+                if (gameResult) isLadyVisible = false
                 currentScreen = "cafe"
             },
             onRestart = {
                 shouldResetDialog = true
                 isLadyVisible = true
+                flowOrderCount = 1
                 currentScreen = "start"
-            }
+            },
+            isFlowResult = false,
+            isFinal = false
         )
 
-        "result_flow" -> ResultDialogScreen(
-            isSuccess = gameResult,
-            onBackToCafe = { currentScreen = "cafe" },
+        "flow_result_first" -> ResultDialogScreen(
+            isSuccess = true,
+            orderedDrinkName = targetDrinkName,
+            onBackToCafe = {
+                flowOrderCount = 2
+                currentScreen = "cafe"  // возврат к Флоу для второго заказа
+            },
             onRestart = {
                 shouldResetDialog = true
                 isLadyVisible = true
+                flowOrderCount = 1
                 currentScreen = "start"
             },
-            isFlowResult = true  // ← используем flow_result_success/fail
+            isFlowResult = true,
+            isFinal = false
+        )
+
+        "flow_result_fail" -> ResultDialogScreen(
+            isSuccess = false,
+            orderedDrinkName = targetDrinkName,
+            onBackToCafe = {
+                currentScreen = "final_lady_result"
+            },
+            onRestart = {
+                shouldResetDialog = true
+                isLadyVisible = true
+                flowOrderCount = 1
+                currentScreen = "start"
+            },
+            isFlowResult = true,
+            isFinal = false
+        )
+
+        "final_lady_result" -> ResultDialogScreen(
+            isSuccess = gameResult,
+            orderedDrinkName = targetDrinkName,
+            onBackToCafe = {
+                shouldResetDialog = true
+                isLadyVisible = true
+                flowOrderCount = 1
+                currentScreen = "start"
+            },
+            onRestart = {
+                shouldResetDialog = true
+                isLadyVisible = true
+                flowOrderCount = 1
+                currentScreen = "start"
+            },
+            isFlowResult = false,
+            isFinal = true
         )
     }
 }
