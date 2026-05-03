@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.example.cafe.presentation.screens.cafe.CafeScreen
+import com.example.cafe.presentation.screens.dialog.FlowDialogScreen
 import com.example.cafe.presentation.screens.dialog.LadyDialogScreen
 import com.example.cafe.presentation.screens.dialog.ResultDialogScreen
 import com.example.cafe.presentation.screens.machine.MachineScreenWithDrawer
@@ -36,18 +37,18 @@ class MainActivity : ComponentActivity() {
 fun AppNavigation() {
     var currentScreen by rememberSaveable { mutableStateOf("start") }
 
-    // Данные для MachineScreen (что заказал персонаж)
     var targetBase by rememberSaveable { mutableStateOf("cappuccino") }
     var targetBlood by rememberSaveable { mutableStateOf("B+") }
+    var targetDrinkName by rememberSaveable { mutableStateOf("Закатный эликсир") }
     var gameResult by rememberSaveable { mutableStateOf(false) }
-
-    // Флаг для сброса диалога при перезапуске игры
     var shouldResetDialog by rememberSaveable { mutableStateOf(false) }
+    var isLadyVisible by rememberSaveable { mutableStateOf(true) }  // ← кто в кафе
 
     when (currentScreen) {
         "start" -> StartScreen(
             onStartClick = {
-                shouldResetDialog = true  // При старте игры сбрасываем диалог
+                shouldResetDialog = true
+                isLadyVisible = true  // ← начинаем с леди
                 currentScreen = "cafe"
             },
             onExitClick = { android.os.Process.killProcess(android.os.Process.myPid()) }
@@ -55,18 +56,30 @@ fun AppNavigation() {
 
         "cafe" -> CafeScreen(
             onBackToStart = { currentScreen = "start" },
-            onNavigateToLadyDialog = { currentScreen = "lady_dialog" }
+            onNavigateToLadyDialog = { currentScreen = "lady_dialog" },
+            onNavigateToFlowDialog = { currentScreen = "flow_dialog" },
+            isLadyVisible = isLadyVisible
         )
 
         "lady_dialog" -> LadyDialogScreen(
             onBackToCafe = { currentScreen = "cafe" },
             onNextScreen = {
-                // Заказ: Закатный эликсир = Капучино + B+
                 targetBase = "cappuccino"
                 targetBlood = "B+"
+                targetDrinkName = "Закатный эликсир"
                 currentScreen = "machine"
             },
-            resetProgress = shouldResetDialog.also { shouldResetDialog = false }  // Сбрасываем прогресс при первом входе
+            resetProgress = shouldResetDialog.also { shouldResetDialog = false }
+        )
+
+        "flow_dialog" -> FlowDialogScreen(
+            onBackToCafe = { currentScreen = "cafe" },
+            onNextScreen = { base, blood, drinkName ->
+                targetBase = base
+                targetBlood = blood
+                targetDrinkName = drinkName
+                currentScreen = "machine_flow"
+            }
         )
 
         "machine" -> MachineScreenWithDrawer(
@@ -79,13 +92,40 @@ fun AppNavigation() {
             }
         )
 
+        "machine_flow" -> MachineScreenWithDrawer(
+            targetBase = targetBase,
+            targetBlood = targetBlood,
+            onBackToCafe = { currentScreen = "cafe" },
+            onComplete = { isCorrect ->
+                gameResult = isCorrect
+                currentScreen = "result_flow"
+            }
+        )
+
         "result" -> ResultDialogScreen(
+            isSuccess = gameResult,
+            onBackToCafe = {
+                if (gameResult) {
+                    isLadyVisible = false  // ← убираем леди, показываем флоу
+                }
+                currentScreen = "cafe"
+            },
+            onRestart = {
+                shouldResetDialog = true
+                isLadyVisible = true
+                currentScreen = "start"
+            }
+        )
+
+        "result_flow" -> ResultDialogScreen(
             isSuccess = gameResult,
             onBackToCafe = { currentScreen = "cafe" },
             onRestart = {
-                shouldResetDialog = true  // При перезапуске после провала сбрасываем диалог
+                shouldResetDialog = true
+                isLadyVisible = true
                 currentScreen = "start"
-            }
+            },
+            isFlowResult = true  // ← используем flow_result_success/fail
         )
     }
 }

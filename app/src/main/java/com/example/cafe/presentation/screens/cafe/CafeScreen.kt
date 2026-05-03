@@ -27,7 +27,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 @Composable
 fun CafeScreen(
     onBackToStart: () -> Unit = {},
-    onNavigateToLadyDialog: () -> Unit = {}  // переход к диалогу леди
+    onNavigateToLadyDialog: () -> Unit = {},
+    onNavigateToFlowDialog: () -> Unit = {},
+    isLadyVisible: Boolean = true
 ) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -60,11 +62,15 @@ fun CafeScreen(
     val landscapeWeatherX = 385.dp
     val landscapeWeatherY = 90.dp
 
-    // Координаты для персонажа lady_small
-    val portraitLadyX = 140.dp
-    val portraitLadyY = 500.dp
-    val landscapeLadyX = 375.dp
-    val landscapeLadyY = 235.dp
+    // Координаты для персонажа
+    val portraitCharacterX = 140.dp
+    val portraitCharacterY = 500.dp
+    val landscapeCharacterX = 375.dp
+    val landscapeCharacterY = 235.dp
+
+    // Выбираем какого персонажа показывать
+    val characterImage = if (isLadyVisible) R.drawable.lady_small else R.drawable.flow_small
+    val characterClick = if (isLadyVisible) onNavigateToLadyDialog else onNavigateToFlowDialog
 
     Box(
         modifier = Modifier
@@ -79,7 +85,7 @@ fun CafeScreen(
             contentScale = ContentScale.Fit
         )
 
-        // Виджет погоды (только для экрана кафе)
+        // Виджет погоды
         Box(
             modifier = Modifier
                 .offset(
@@ -96,18 +102,18 @@ fun CafeScreen(
             )
         }
 
-        // Персонаж lady_small с анимацией при нажатии
-        val ladyPainter = painterResource(id = R.drawable.lady_small)
-        val ladyIntrinsicSize = ladyPainter.intrinsicSize
+        // Персонаж (леди или флоу) с анимацией при нажатии
+        val characterPainter = painterResource(id = characterImage)
+        val characterIntrinsicSize = characterPainter.intrinsicSize
 
         AnimatedCharacter(
-            onClick = onNavigateToLadyDialog,
-            xOffset = if (isLandscape) landscapeLadyX else portraitLadyX,
-            yOffset = if (isLandscape) landscapeLadyY else portraitLadyY,
-            width = ladyIntrinsicSize.width.dp,
-            height = ladyIntrinsicSize.height.dp,
-            painter = ladyPainter,
-            contentDescription = "Lady character"
+            onClick = characterClick,
+            xOffset = if (isLandscape) landscapeCharacterX else portraitCharacterX,
+            yOffset = if (isLandscape) landscapeCharacterY else portraitCharacterY,
+            width = characterIntrinsicSize.width.dp,
+            height = characterIntrinsicSize.height.dp,
+            painter = characterPainter,
+            contentDescription = if (isLadyVisible) "Lady character" else "Flow character"
         )
     }
 }

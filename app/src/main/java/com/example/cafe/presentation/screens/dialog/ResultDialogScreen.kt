@@ -26,8 +26,10 @@ import kotlinx.coroutines.withContext
 @Composable
 fun ResultDialogScreen(
     isSuccess: Boolean,
+    orderedDrinkName: String = "Закатный эликсир",
     onBackToCafe: () -> Unit = {},
-    onRestart: () -> Unit = {}
+    onRestart: () -> Unit = {},
+    isFlowResult: Boolean = false
 ) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -39,15 +41,27 @@ fun ResultDialogScreen(
     var currentIndex by rememberSaveable { mutableStateOf(0) }
     var isLoaded by remember { mutableStateOf(false) }
 
-    // Загружаем диалог из JSON в зависимости от результата
+    // Выбираем ID диалога в зависимости от результата и персонажа
+    val dialogId = when {
+        isFlowResult && isSuccess -> "flow_result_success"
+        isFlowResult && !isSuccess -> "flow_result_fail"
+        !isFlowResult && isSuccess -> "result_success"
+        else -> "result_fail"
+    }
+
+    // Загружаем диалог из JSON
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             val repository = DialogRepository(context)
-            val dialogId = if (isSuccess) "result_success" else "result_fail"
             val lines = repository.loadDialogFromAssets(dialogId)
 
+            // Заменяем плейсхолдер на название напитка
+            val processedLines = lines.map { line ->
+                line.replace("{drinkName}", orderedDrinkName)
+            }
+
             withContext(Dispatchers.Main) {
-                dialogLines = lines
+                dialogLines = processedLines
                 isLoaded = true
             }
         }
