@@ -18,7 +18,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cafe.R
 import com.example.cafe.data.repository.DialogRepository
 import com.example.cafe.domain.usecases.LoadDialogUseCase
@@ -28,16 +27,19 @@ import com.example.cafe.domain.usecases.SaveDialogProgressUseCase
 fun LadyDialogScreen(
     onBackToCafe: () -> Unit = {},
     onNextScreen: () -> Unit = {},
-    viewModel: DialogViewModel = viewModel(
-        factory = DialogViewModelFactory(
-            LoadDialogUseCase(DialogRepository(LocalContext.current)),
-            SaveDialogProgressUseCase(DialogRepository(LocalContext.current))
-        )
-    )
+    resetProgress: Boolean = false
 ) {
+    val context = LocalContext.current
+
+    val viewModel: DialogViewModel = remember {
+        val repository = DialogRepository(context)
+        val loadUseCase = LoadDialogUseCase(repository)
+        val saveUseCase = SaveDialogProgressUseCase(repository)
+        DialogViewModel(loadUseCase, saveUseCase)
+    }
+
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-    val context = LocalContext.current
 
     val backgroundRes = if (isLandscape) R.drawable.lady_l else R.drawable.lady_p
     val dialogLines by viewModel.dialogLines.observeAsState(emptyList())
@@ -46,13 +48,10 @@ fun LadyDialogScreen(
     val isComplete by viewModel.isComplete.observeAsState(false)
 
     LaunchedEffect(Unit) {
-        viewModel.loadDialog("lady_dialog")
-    }
-
-    LaunchedEffect(currentIndex) {
-        if (!isLoading && dialogLines.isNotEmpty()) {
-            viewModel.saveProgress("lady_dialog")
+        if (resetProgress) {
+            viewModel.resetProgress("lady_dialog")  // сбрасываем прогресс в Room
         }
+        viewModel.loadDialog("lady_dialog", resetProgress)  // загружаем диалог
     }
 
     LaunchedEffect(isComplete) {

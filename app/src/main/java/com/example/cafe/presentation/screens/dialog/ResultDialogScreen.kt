@@ -7,6 +7,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -35,7 +36,7 @@ fun ResultDialogScreen(
     val backgroundRes = if (isLandscape) R.drawable.lady_l else R.drawable.lady_p
 
     var dialogLines by remember { mutableStateOf<List<String>>(emptyList()) }
-    var currentIndex by remember { mutableStateOf(0) }
+    var currentIndex by rememberSaveable { mutableStateOf(0) }
     var isLoaded by remember { mutableStateOf(false) }
 
     // Загружаем диалог из JSON в зависимости от результата

@@ -41,9 +41,15 @@ fun AppNavigation() {
     var targetBlood by rememberSaveable { mutableStateOf("B+") }
     var gameResult by rememberSaveable { mutableStateOf(false) }
 
+    // Флаг для сброса диалога при перезапуске игры
+    var shouldResetDialog by rememberSaveable { mutableStateOf(false) }
+
     when (currentScreen) {
         "start" -> StartScreen(
-            onStartClick = { currentScreen = "cafe" },
+            onStartClick = {
+                shouldResetDialog = true  // При старте игры сбрасываем диалог
+                currentScreen = "cafe"
+            },
             onExitClick = { android.os.Process.killProcess(android.os.Process.myPid()) }
         )
 
@@ -59,7 +65,8 @@ fun AppNavigation() {
                 targetBase = "cappuccino"
                 targetBlood = "B+"
                 currentScreen = "machine"
-            }
+            },
+            resetProgress = shouldResetDialog.also { shouldResetDialog = false }  // Сбрасываем прогресс при первом входе
         )
 
         "machine" -> MachineScreenWithDrawer(
@@ -75,7 +82,10 @@ fun AppNavigation() {
         "result" -> ResultDialogScreen(
             isSuccess = gameResult,
             onBackToCafe = { currentScreen = "cafe" },
-            onRestart = { currentScreen = "start" }
+            onRestart = {
+                shouldResetDialog = true  // При перезапуске после провала сбрасываем диалог
+                currentScreen = "start"
+            }
         )
     }
 }

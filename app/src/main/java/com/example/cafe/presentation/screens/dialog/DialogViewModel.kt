@@ -1,6 +1,5 @@
 package com.example.cafe.presentation.screens.dialog
 
-
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -26,31 +25,46 @@ class DialogViewModel(
     private val _isComplete = MutableLiveData(false)
     val isComplete: LiveData<Boolean> = _isComplete
 
-    fun loadDialog(dialogId: String) {
+    private var currentDialogId = ""
+
+    fun loadDialog(dialogId: String, reset: Boolean = false) {
+        currentDialogId = dialogId
         viewModelScope.launch {
             _isLoading.value = true
             val lines = loadDialogUseCase(dialogId)
             _dialogLines.value = lines
-            _currentIndex.value = 0
+
+            // Загружаем сохранённый прогресс из Room (если не сброс)
+            val savedIndex = if (reset) 0 else saveProgressUseCase.getProgress(dialogId)
+            _currentIndex.value = savedIndex
+
             _isLoading.value = false
         }
     }
 
+    fun resetProgress(dialogId: String) {
+        viewModelScope.launch {
+            saveProgressUseCase.resetProgress(dialogId)
+        }
+    }
     fun nextLine() {
         val current = _currentIndex.value ?: 0
         val lines = _dialogLines.value ?: emptyList()
 
         if (current < lines.size - 1) {
             _currentIndex.value = current + 1
+            saveProgress()
         } else {
             _isComplete.value = true
         }
     }
 
-    fun saveProgress(dialogId: String) {
-        viewModelScope.launch {
-            val index = _currentIndex.value ?: 0
-            saveProgressUseCase(dialogId, index)
+    private fun saveProgress() {
+        if (currentDialogId.isNotEmpty()) {
+            viewModelScope.launch {
+                val index = _currentIndex.value ?: 0
+                saveProgressUseCase(currentDialogId, index)
+            }
         }
     }
 
