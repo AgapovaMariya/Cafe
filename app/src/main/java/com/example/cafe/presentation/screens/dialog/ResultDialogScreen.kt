@@ -35,7 +35,11 @@ fun ResultDialogScreen(
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     val context = LocalContext.current
 
-    val backgroundRes = if (isLandscape) R.drawable.lady_l else R.drawable.lady_p
+    val backgroundRes = if (isFlowResult) {
+        if (isLandscape) R.drawable.flow_l else R.drawable.flow_p
+    } else {
+        if (isLandscape) R.drawable.lady_l else R.drawable.lady_p
+    }
 
     var dialogLines by remember { mutableStateOf<List<String>>(emptyList()) }
     var currentIndex by rememberSaveable { mutableStateOf(0) }
@@ -92,7 +96,7 @@ fun ResultDialogScreen(
     ) {
         Image(
             painter = painterResource(id = backgroundRes),
-            contentDescription = "Result dialog background",
+            contentDescription = if (isFlowResult) "Flow result background" else "Lady result background",
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Fit
         )
