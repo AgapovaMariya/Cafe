@@ -54,17 +54,12 @@ fun MachineScreen(
 
     val bloodIngredients = listOf(
         Triple("A+", "Кровь A+", R.drawable.a_jar),
-        Triple("A-", "Кровь A-", R.drawable.a2_jar),
+        Triple("C", "Кровь A-", R.drawable.a2_jar),  // ← здесь C вместо A-
         Triple("B+", "Кровь B+", R.drawable.b_jar)
     )
 
     val portraitRowY = 500.dp
     val landscapeRowY = 250.dp
-    // Функция нормализации группы крови для сравнения
-    fun normalizeBlood(blood: String): String = when (blood) {
-        "A-" -> "C"
-        else -> blood
-    }
 
     Box(
         modifier = Modifier
@@ -78,7 +73,6 @@ fun MachineScreen(
             contentScale = ContentScale.Fit
         )
 
-        // Кнопка меню
         IconButton(
             onClick = onOpenDrawer,
             modifier = Modifier
@@ -109,8 +103,9 @@ fun MachineScreen(
                 .fillMaxWidth()
                 .offset(
                     x = if (isLandscape) 130.dp else 20.dp,
-                    y = if (isLandscape) landscapeRowY + 10.dp else portraitRowY)
-                        .padding(horizontal = 16.dp),
+                    y = if (isLandscape) landscapeRowY + 10.dp else portraitRowY
+                )
+                .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             val ingredients = if (step == 0) baseIngredients else bloodIngredients
@@ -124,10 +119,7 @@ fun MachineScreen(
                             step = 1
                         } else {
                             selectedBlood = id
-                            // Нормализуем обе группы крови для сравнения
-                            val normalizedSelected = normalizeBlood(id)
-                            val normalizedTarget = normalizeBlood(targetBlood)
-                            val isCorrect = selectedBase == targetBase && normalizedSelected == normalizedTarget
+                            val isCorrect = selectedBase == targetBase && id == targetBlood
                             onComplete(isCorrect)
                         }
                     }

@@ -44,7 +44,6 @@ fun AppNavigation() {
     var shouldResetDialog by rememberSaveable { mutableStateOf(false) }
     var isLadyVisible by rememberSaveable { mutableStateOf(true) }
 
-    // Флоу: 1=первый заказ, 2=второй заказ
     var flowOrderCount by rememberSaveable { mutableStateOf(1) }
 
     when (currentScreen) {
@@ -62,7 +61,6 @@ fun AppNavigation() {
             onBackToStart = { currentScreen = "start" },
             onNavigateToLadyDialog = { currentScreen = "lady_dialog" },
             onNavigateToFlowDialog = {
-                // НЕ сбрасываем flowOrderCount!
                 currentScreen = "flow_dialog"
             },
             isLadyVisible = isLadyVisible
@@ -109,14 +107,13 @@ fun AppNavigation() {
                     1 -> {
                         if (isCorrect) {
                             gameResult = true
-                            currentScreen = "flow_result_first"  // спасибо, давай ещё
+                            currentScreen = "flow_result_first"
                         } else {
                             gameResult = false
-                            currentScreen = "flow_result_fail"   // диалог провала Флоу
+                            currentScreen = "flow_result_fail"
                         }
                     }
                     2 -> {
-                        // Второй заказ – сразу финал без промежуточных диалогов
                         gameResult = isCorrect
                         currentScreen = "final_lady_result"
                     }
@@ -146,7 +143,7 @@ fun AppNavigation() {
             orderedDrinkName = targetDrinkName,
             onBackToCafe = {
                 flowOrderCount = 2
-                currentScreen = "cafe"  // возврат к Флоу для второго заказа
+                currentScreen = "cafe"
             },
             onRestart = {
                 shouldResetDialog = true
