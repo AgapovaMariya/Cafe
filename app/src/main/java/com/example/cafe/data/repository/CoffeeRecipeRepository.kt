@@ -12,8 +12,17 @@ object CoffeeRecipeRepository {
         CoffeeRecipe(6, "Закатный эликсир", "cappuccino", "B+", "Тёплый оттенок B+")
     )
 
+    // Функция нормализации группы крови для сравнения
+    private fun normalizeBlood(blood: String): String = when (blood) {
+        "A-" -> "C"
+        else -> blood
+    }
+
     fun getRecipeByBaseAndBlood(base: String, blood: String): CoffeeRecipe? {
-        return recipes.find { it.base == base && it.blood == blood }
+        val normalizedBlood = normalizeBlood(blood)
+        return recipes.find {
+            it.base == base && normalizeBlood(it.blood) == normalizedBlood
+        }
     }
 
     fun getRecipeName(base: String, blood: String): String {

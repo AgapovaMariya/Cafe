@@ -60,6 +60,11 @@ fun MachineScreen(
 
     val portraitRowY = 500.dp
     val landscapeRowY = 250.dp
+    // Функция нормализации группы крови для сравнения
+    fun normalizeBlood(blood: String): String = when (blood) {
+        "A-" -> "C"
+        else -> blood
+    }
 
     Box(
         modifier = Modifier
@@ -119,7 +124,10 @@ fun MachineScreen(
                             step = 1
                         } else {
                             selectedBlood = id
-                            val isCorrect = selectedBase == targetBase && id == targetBlood
+                            // Нормализуем обе группы крови для сравнения
+                            val normalizedSelected = normalizeBlood(id)
+                            val normalizedTarget = normalizeBlood(targetBlood)
+                            val isCorrect = selectedBase == targetBase && normalizedSelected == normalizedTarget
                             onComplete(isCorrect)
                         }
                     }
