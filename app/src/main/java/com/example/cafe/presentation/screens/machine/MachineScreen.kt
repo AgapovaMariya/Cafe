@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.cafe.R
+import com.example.cafe.data.repository.CoffeeRecipeRepository
 
 @Composable
 fun MachineScreen(
@@ -54,12 +55,15 @@ fun MachineScreen(
 
     val bloodIngredients = listOf(
         Triple("A+", "Кровь A+", R.drawable.a_jar),
-        Triple("C", "Кровь A-", R.drawable.a2_jar),  // ← здесь C вместо A-
+        Triple("A-", "Кровь A-", R.drawable.a2_jar),
         Triple("B+", "Кровь B+", R.drawable.b_jar)
     )
 
     val portraitRowY = 500.dp
     val landscapeRowY = 250.dp
+
+    // Нормализуем целевые значения для сравнения
+    val normalizedTargetBlood = CoffeeRecipeRepository.normalizeBlood(targetBlood)
 
     Box(
         modifier = Modifier
@@ -119,7 +123,9 @@ fun MachineScreen(
                             step = 1
                         } else {
                             selectedBlood = id
-                            val isCorrect = selectedBase == targetBase && id == targetBlood
+                            // Нормализуем выбранную кровь и сравниваем с нормализованной целевой
+                            val normalizedSelected = CoffeeRecipeRepository.normalizeBlood(id)
+                            val isCorrect = selectedBase == targetBase && normalizedSelected == normalizedTargetBlood
                             onComplete(isCorrect)
                         }
                     }
